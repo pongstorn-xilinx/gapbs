@@ -36,7 +36,9 @@ pvector<ScoreT> PageRankPullGS(const Graph &g, int max_iters,
   const ScoreT init_score = 1.0f / g.num_nodes();
   const ScoreT base_score = (1.0f - kDamp) / g.num_nodes();
   pvector<ScoreT> scores(g.num_nodes(), init_score);
+  scores.dump(" scores ");
   pvector<ScoreT> outgoing_contrib(g.num_nodes());
+  outgoing_contrib.dump(" outgoing_contrib ");
   #pragma omp parallel for
   for (NodeID n=0; n < g.num_nodes(); n++)
     outgoing_contrib[n] = init_score / g.out_degree(n);

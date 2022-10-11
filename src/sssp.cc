@@ -87,6 +87,7 @@ void RelaxEdges(const WGraph &g, NodeID u, WeightT delta,
 pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
   Timer t;
   pvector<WeightT> dist(g.num_nodes(), kDistInf);
+  dist.dump(" DeltaStep dist ");
   dist[source] = 0;
   pvector<NodeID> frontier(g.num_edges_directed());
   // two element arrays for double buffering curr=iter&1, next=(iter+1)&1
@@ -197,6 +198,10 @@ int main(int argc, char* argv[]) {
     return -1;
   WeightedBuilder b(cli);
   WGraph g = b.MakeGraph();
+  if (cli.scale() > 0 ) {
+    std::string fileName = "gen_" + std::to_string(cli.scale()) + ".graph";
+    WriteGraph(g,fileName);
+  }
   SourcePicker<WGraph> sp(g, cli.start_vertex());
   auto SSSPBound = [&sp, &cli] (const WGraph &g) {
     return DeltaStep(g, sp.PickNext(), cli.delta());

@@ -93,6 +93,7 @@ NodeID SampleFrequentElement(const pvector<NodeID>& comp,
 
 pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2) {
   pvector<NodeID> comp(g.num_nodes());
+  comp.dump(" Afforest comp ");
 
   // Initialize each node to a single-node self-pointing tree
   #pragma omp parallel for

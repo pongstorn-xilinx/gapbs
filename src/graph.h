@@ -110,6 +110,7 @@ class CSRGraph {
         n_(n), g_index_(g_index), start_offset_(0) {
       OffsetT max_offset = end() - begin();
       start_offset_ = std::min(start_offset, max_offset);
+//      std::cout << "Neighborhood idx 0 " << std::hex << g_index_[0] << std::dec << "\n";
     }
     typedef DestID_* iterator;
     iterator begin() { return g_index_[n_] + start_offset_; }
@@ -148,6 +149,7 @@ class CSRGraph {
     out_index_(out_index), out_neighbors_(out_neighs),
     in_index_(in_index), in_neighbors_(in_neighs) {
       num_edges_ = out_index_[num_nodes_] - out_index_[0];
+//      std::cout << "ctor CSRGraph out_index_[0] " << std::hex << out_index_[0] << std::dec << "\n";
     }
 
   CSRGraph(CSRGraph&& other) : directed_(other.directed_),
@@ -239,9 +241,12 @@ class CSRGraph {
     }
   }
 
+
+
   static DestID_** GenIndex(const pvector<SGOffset> &offsets, DestID_* neighs) {
     NodeID_ length = offsets.size();
     DestID_** index = new DestID_*[length];
+//    std::cout << "PM:PM GenIndex index data start addr " << std::hex << index<< std::dec << " size " << length << "\n\n";
     #pragma omp parallel for
     for (NodeID_ n=0; n < length; n++)
       index[n] = neighs + offsets[n];
@@ -272,4 +277,47 @@ class CSRGraph {
   DestID_*  in_neighbors_;
 };
 
+
+// Make non-member to specialize easier.
+// Write graph out in .graph format.
+// The filename must not have extension. .graph will be prepended.
+void WriteGraph(const CSRGraph<int, NodeWeight<int,int>, true> &g, std::string fname) {
+    // first line: num_node num_edge weight_indicator 14 53 1
+    // each line afterword represent one node in index order (start from index 1)
+    // Within each line contains a list of neighbor index and edge weight.
+    // This line shows a node with 2 neighbors, ie., 2 and 3.
+    // The width to node 2 is 19, while that to node 3 is 5
+    // 2 19 3 5
+
+    std::ofstream gfile(fname);
+    gfile << g.num_nodes() << " " << g.num_edges() << " 1\n";
+    for (auto i = 0; i < g.num_nodes(); ++i) {
+        for (auto n : g.out_neigh(i)) {
+            // the format dictate the index start form 1 not 0
+            gfile << (n.v)+1 << " " << n.w << " ";
+        }
+        gfile << "\n";
+    }
+    gfile.close();
+}
+
+void WriteGraph(const CSRGraph<int, int, true> &g, std::string fname) {
+    // first line: num_node num_edge weight_indicator 14 53 1
+    // each line afterword represent one node in index order (start from index 1)
+    // Within each line contains a list of neighbor index and edge weight.
+    // This line shows a node with 2 neighbors, ie., 2 and 3.
+    // The width to node 2 is 19, while that to node 3 is 5
+    // 2 19 3 5
+
+    std::ofstream gfile(fname);
+    gfile << g.num_nodes() << " " << g.num_edges() << " 0\n";
+    for (auto i = 0; i < g.num_nodes(); ++i) {
+        for (auto n : g.out_neigh(i)) {
+            // the format dictate the index start form 1 not 0
+            gfile << n+1 << " ";
+        }
+        gfile << "\n";
+    }
+    gfile.close();
+}
 #endif  // GRAPH_H_

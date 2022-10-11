@@ -21,6 +21,7 @@
 #include "util.h"
 
 
+
 /*
 GAP Benchmark Suite
 Class:  BuilderBase
@@ -32,6 +33,7 @@ Given arguements from the command line (cli), returns a built graph
  - edgelist can be from file (reader) or synthetically generated (generator)
  - Common case: BuilderBase typedef'd (w/ params) to be Builder (benchmark.h)
 */
+// PM:PM TBD
 
 
 template <typename NodeID_, typename DestID_ = NodeID_,
@@ -136,6 +138,34 @@ class BuilderBase {
     return prefix;
   }
 
+  void dumpGraph2(std::string msg, const CSRGraph<NodeID_, DestID_, invert> &g) {
+      std::cout << "PM:PM dumpGraph2 " << msg << "\n";
+      DestID_ *n_start, *n_end;
+      for (NodeID_ n = 0; n < g.num_nodes(); n++) {
+          std::cout << "node " << n << " : ";
+          n_start = g.out_neigh(n).begin();
+          n_end = g.out_neigh(n).end();
+          for (DestID_* it = n_start; it != n_end; ++it)
+              std::cout << " " << *it << " " << std::hex << it << std::dec;
+          std::cout << "\n";
+      }
+//      std::cout << "printtopology\n";
+//      g.PrintTopology();
+  }
+  void dumpGraph(std::string msg, DestID_*** index, int isize, DestID_** neighs, int ineighs) {
+      std::cout << "PM:PM " << msg << "\n";
+      std::cout << "PM:PM index " << std::hex << *index << std::dec << " " << isize << " : ";
+      std::cout << std::hex;
+      for (int i = 0; i < isize; i++) {
+          std::cout << (*index)[i] << " ";
+      }
+      std::cout << std::dec << "\n";
+      std::cout << "PM:PM neighs " << std::hex << *neighs << std::dec << " " << ineighs << " : ";
+      for (int i = 0; i < ineighs; i++) {
+          std::cout << (*neighs)[i] << " ";
+      }
+      std::cout << "\n";
+  }
   // Removes self-loops and redundant edges
   // Side effect: neighbor IDs will be sorted
   void SquishCSR(const CSRGraph<NodeID_, DestID_, invert> &g, bool transpose,
@@ -173,17 +203,45 @@ class BuilderBase {
       const CSRGraph<NodeID_, DestID_, invert> &g) {
     DestID_ **out_index, *out_neighs, **in_index, *in_neighs;
     SquishCSR(g, false, &out_index, &out_neighs);
+    // PM:PM
+//    dumpGraph("after 1st squish", &out_index, 15, &out_neighs, 53);
+    std::cout << "\nPM:PM index entry size " << sizeof(DestID_*)
+              << " neigh entry size " << sizeof (DestID_) << "\n\n";
     if (g.directed()) {
-      if (invert)
-        SquishCSR(g, true, &in_index, &in_neighs);
+      if (invert) {
+          SquishCSR(g, true, &in_index, &in_neighs);
+//          dumpGraph("before final CSR after 2nd squish", &out_index, 15, &out_neighs, 53);
+//          dumpGraph2("before final CSR after 2nd squish", g);
+      }
+        std::cout << "PM:PM SquishGraph "
+                  << " num_nodes : "      << g.num_nodes() << "  0x" << std::hex << g.num_nodes() << std::dec
+                  << " num_edges : "      << g.num_edges() << " " << out_index[num_nodes_] - out_index[0]
+                  << std::hex << "  0x" << g.num_edges()
+                  << " num_edges : "      << g.num_edges()
+                  << " out_index : "      << out_index
+                  << " out_neighs : "     << out_neighs << " " << out_neighs+g.num_edges()
+                  << " in_index  : "      << in_index
+                  << " in_neighs  : "     << in_neighs << " " << in_neighs+g.num_edges()
+                  << std::dec << "\n\n";
       return CSRGraph<NodeID_, DestID_, invert>(g.num_nodes(), out_index,
                                                 out_neighs, in_index,
                                                 in_neighs);
     } else {
+//        dumpGraph("before final CSR", &out_index, 15, &out_neighs, 53);
+//        dumpGraph2("before final CSR", g);
+        std::cout << "PM:PM SquishGraph "
+                << " num_nodes : "      << g.num_nodes()
+                << " num_edges : "      << g.num_edges() << " " << out_index[num_nodes_] - out_index[0]
+                << std::hex
+                << " num_edges : "      << g.num_edges()
+                << " out_index : "      << out_index
+                << " out_neighs : "     << out_neighs << " " << out_neighs+g.num_edges()
+                << std::dec << "\n\n";
       return CSRGraph<NodeID_, DestID_, invert>(g.num_nodes(), out_index,
                                                 out_neighs);
     }
   }
+
 
   /*
   In-Place Graph Building Steps
@@ -301,6 +359,7 @@ class BuilderBase {
     pvector<NodeID_> degrees = CountDegrees(el, transpose);
     pvector<SGOffset> offsets = ParallelPrefixSum(degrees);
     *neighs = new DestID_[offsets[num_nodes_]];
+//    std::cout << "\nPM:PM neighs data start addr " << std::hex << neighs << std::dec << " size " << num_nodes_ << "\n";
     *index = CSRGraph<NodeID_, DestID_>::GenIndex(offsets, *neighs);
     #pragma omp parallel for
     for (auto it = el.begin(); it < el.end(); it++) {
@@ -311,9 +370,17 @@ class BuilderBase {
         (*neighs)[fetch_and_add(offsets[static_cast<NodeID_>(e.v)], 1)] =
             GetSource(e);
     }
+
   }
 
   CSRGraph<NodeID_, DestID_, invert> MakeGraphFromEL(EdgeList &el) {
+//    // PM:PM to be deleted
+//    for (auto it = el.begin(); it < el.end(); it++) {
+//      std::cout << "PM:PM " << it->u << " -> " << it->v << "\n";
+//    }
+
+
+
     DestID_ **index = nullptr, **inv_index = nullptr;
     DestID_ *neighs = nullptr, *inv_neighs = nullptr;
     Timer t;
@@ -332,6 +399,7 @@ class BuilderBase {
     }
     t.Stop();
     PrintTime("Build Time", t.Seconds());
+
     if (symmetrize_)
       return CSRGraph<NodeID_, DestID_, invert>(num_nodes_, index, neighs);
     else

@@ -5,6 +5,7 @@
 #define PVECTOR_H_
 
 #include <algorithm>
+#include <iostream>
 
 
 /*
@@ -28,6 +29,8 @@ class pvector {
 
   explicit pvector(size_t num_elements) {
     start_ = new T_[num_elements];
+//    std::cout << "PM:PM property data start addr " << std::hex << start_ << std::dec
+//      << "  property size (Bytes) " << sizeof(T_) << "  num " << num_elements << std::endl;
     end_size_ = start_ + num_elements;
     end_capacity_ = end_size_;
   }
@@ -77,6 +80,10 @@ class pvector {
 
   ~pvector() {
     ReleaseResources();
+  }
+  void dump(std::string msg) {
+    std::cout << "\nPM:PM property data " << msg << " addr ranges " << std::hex << start_ << " " << end_size_ << std::dec
+      << "  : property entry size (Bytes) " << sizeof(T_) << "\n\n";
   }
 
   // not thread-safe

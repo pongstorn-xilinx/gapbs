@@ -98,6 +98,8 @@ pvector<ScoreT> Brandes(const Graph &g, SourcePicker<Graph> &sp,
   t.Start();
   pvector<ScoreT> scores(g.num_nodes(), 0);
   pvector<CountT> path_counts(g.num_nodes());
+  path_counts.dump(" Brandes path_counts ");
+
   Bitmap succ(g.num_edges_directed());
   vector<SlidingQueue<NodeID>::iterator> depth_index;
   SlidingQueue<NodeID> queue(g.num_nodes());

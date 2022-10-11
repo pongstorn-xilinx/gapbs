@@ -125,6 +125,7 @@ pvector<NodeID> DOBFS(const Graph &g, NodeID source, int alpha = 15,
   Timer t;
   t.Start();
   pvector<NodeID> parent = InitParent(g);
+  parent.dump(" DOBFS ");
   t.Stop();
   PrintStep("i", t.Seconds());
   parent[source] = source;
@@ -247,6 +248,9 @@ int main(int argc, char* argv[]) {
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
+
+//  b.dumpGraph2("\n\n****final graph****", g);
+
   SourcePicker<Graph> sp(g, cli.start_vertex());
   auto BFSBound = [&sp] (const Graph &g) { return DOBFS(g, sp.PickNext()); };
   SourcePicker<Graph> vsp(g, cli.start_vertex());
