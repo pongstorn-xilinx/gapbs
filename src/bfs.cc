@@ -43,6 +43,9 @@ them in parent array as negative numbers. Thus the encoding of parent is:
 
 using namespace std;
 
+#define GEN_SIDEFILE
+ofstream sideFile;
+
 int64_t BUStep(const Graph &g, pvector<NodeID> &parent, Bitmap &front,
                Bitmap &next) {
   int64_t awake_count = 0;
@@ -125,7 +128,21 @@ pvector<NodeID> DOBFS(const Graph &g, NodeID source, int alpha = 15,
   Timer t;
   t.Start();
   pvector<NodeID> parent = InitParent(g);
+
   parent.dump(" DOBFS ");
+
+#ifdef GEN_SIDEFILE
+  sideFile << g.getOutNeighAddresses();
+  g.WriteOutNeigh(sideFile);
+//  g.WriteInNeigh(sideFile);
+  sideFile << parent.getAddresses();
+#endif
+  ofstream graphInfoFile;
+  graphInfoFile.open("property_addr.txt");
+  graphInfoFile << g.getOutNeighAddresses();
+  graphInfoFile << parent.getAddresses();
+  graphInfoFile.close();
+
   t.Stop();
   PrintStep("i", t.Seconds());
   parent[source] = source;
@@ -250,7 +267,16 @@ int main(int argc, char* argv[]) {
   Graph g = b.MakeGraph();
 
 //  b.dumpGraph2("\n\n****final graph****", g);
-
+#ifdef GEN_SIDEFILE
+//  std::string graphName(cli.filename().substr(0, cli.filename().find(".")));
+//  graphName = graphName.substr(graphName.find_last_of("/")+1);
+//  std::string fileName("bfs_" + graphName);
+//  fileName.append("_n");
+//  fileName.append(std::to_string(cli.num_trials()));
+//  fileName.append(".txt");
+//  sideFile.open(fileName);
+  sideFile.open("edge_data.txt");
+#endif
   SourcePicker<Graph> sp(g, cli.start_vertex());
   auto BFSBound = [&sp] (const Graph &g) { return DOBFS(g, sp.PickNext()); };
   SourcePicker<Graph> vsp(g, cli.start_vertex());
@@ -258,5 +284,8 @@ int main(int argc, char* argv[]) {
     return BFSVerifier(g, vsp.PickNext(), parent);
   };
   BenchmarkKernel(cli, g, BFSBound, PrintBFSStats, VerifierBound);
+#ifdef GEN_SIDEFILE
+  sideFile.close();
+#endif  
   return 0;
 }

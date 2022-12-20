@@ -37,6 +37,8 @@ which restructures and extends the Shiloach-Vishkin algorithm [2].
 
 using namespace std;
 
+//#define GEN_SIDEFILE
+ofstream sideFile;
 
 // Place nodes u and v in same component of lower component ID
 void Link(NodeID u, NodeID v, pvector<NodeID>& comp) {
@@ -93,7 +95,23 @@ NodeID SampleFrequentElement(const pvector<NodeID>& comp,
 
 pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2) {
   pvector<NodeID> comp(g.num_nodes());
+
   comp.dump(" Afforest comp ");
+#ifdef GEN_SIDEFILE
+  sideFile << g.getOutNeighAddresses();
+  g.WriteOutNeigh(sideFile);
+  sideFile << g.getInNeighAddresses();
+  g.WriteInNeigh(sideFile);
+  sideFile << comp.getAddresses();
+#endif
+  ofstream graphInfoFile;
+  graphInfoFile.open("property_addr.txt");
+  graphInfoFile << g.getOutNeighAddresses();
+  graphInfoFile << g.getInNeighAddresses();
+  graphInfoFile << comp.getAddresses();
+  graphInfoFile.close();
+
+
 
   // Initialize each node to a single-node self-pointing tree
   #pragma omp parallel for
@@ -222,7 +240,21 @@ int main(int argc, char* argv[]) {
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
+
+#ifdef GEN_SIDEFILE
+//  std::string graphName(cli.filename().substr(0, cli.filename().find(".")));
+//  graphName = graphName.substr(graphName.find_last_of("/")+1);
+//  std::string fileName("cc_" + graphName);
+//  fileName.append("_n");
+//  fileName.append(std::to_string(cli.num_trials()));
+//  fileName.append(".txt");
+//  sideFile.open(fileName);
+  sideFile.open("edge_data.txt");
+#endif
   auto CCBound = [](const Graph& gr){ return Afforest(gr); };
   BenchmarkKernel(cli, g, CCBound, PrintCompStats, CCVerifier);
+#ifdef GEN_SIDEFILE
+  sideFile.close();
+#endif
   return 0;
 }

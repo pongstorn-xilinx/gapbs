@@ -223,6 +223,7 @@ class BuilderBase {
                   << " in_index  : "      << in_index
                   << " in_neighs  : "     << in_neighs << " " << in_neighs+g.num_edges()
                   << std::dec << "\n\n";
+      // The following ctor just record the ptr. Thus, don't change the graph location.
       return CSRGraph<NodeID_, DestID_, invert>(g.num_nodes(), out_index,
                                                 out_neighs, in_index,
                                                 in_neighs);

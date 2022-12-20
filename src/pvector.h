@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 
 
 /*
@@ -84,6 +85,12 @@ class pvector {
   void dump(std::string msg) {
     std::cout << "\nPM:PM property data " << msg << " addr ranges " << std::hex << start_ << " " << end_size_ << std::dec
       << "  : property entry size (Bytes) " << sizeof(T_) << "\n\n";
+  }
+
+  std::string getAddresses() {
+    std::stringstream str;
+    str << "p " << std::hex << start_ << " " << end_size_ << " " << sizeof(T_) << "\n";
+    return str.str();
   }
 
   // not thread-safe

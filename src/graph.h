@@ -13,6 +13,8 @@
 #include "pvector.h"
 #include "util.h"
 
+// PM:PM TBD
+#include <iostream>
 
 /*
 GAP Benchmark Suite
@@ -266,6 +268,46 @@ class CSRGraph {
   Range<NodeID_> vertices() const {
     return Range<NodeID_>(num_nodes());
   }
+  std::string getOutNeighAddresses() const {
+      std::stringstream str;
+      str << "oneigh " << std::hex << out_neighbors_ << " " << out_neighbors_ + num_edges_ << " " << std::dec << num_edges_ << "\n";
+      return str.str();
+  }
+  std::string getInNeighAddresses() const {
+      std::stringstream str;
+      str << "ineigh " << std::hex << in_neighbors_ << " " << in_neighbors_ + num_edges_ << " " << std::dec << num_edges_ << "\n";
+      return str.str();
+  }
+void WriteOutNeigh(std::ofstream &f) const {
+//    f << "oneigh " << std::hex << out_neighbors_ << " " << out_neighbors_ + num_edges_ << " " << std::dec << num_edges_ << "\n";
+    int count = 0;
+    for (auto i = 0; i < num_nodes_; ++i) {
+        for (auto n : out_neigh(i)) {
+            // the format dictate the index start form 0 not 1
+            f << n << "\n";
+            count++;
+        }
+    }
+    if (count != num_edges_) {
+        std::cout << "WriteOutNeigh found wrong number of edges. " << count << " instead of " << num_edges_ << "\n";
+    }
+}
+
+void WriteInNeigh(std::ofstream &f) const {
+//    f << "ineigh " << std::hex << in_neighbors_ << " " << in_neighbors_ + num_edges_ << " " << std::dec << num_edges_ << "\n";
+    int count = 0;
+    for (auto i = 0; i < num_nodes_; ++i) {
+        for (auto n : in_neigh(i)) {
+            // the format dictate the index start form 0 not 1
+            f << n << "\n";
+            count++;
+        }
+    }
+    if (count != num_edges_) {
+        std::cout << "WriteInNeigh found wrong number of edges. " << count << " instead of " << num_edges_ << "\n";
+    }
+}
+
 
  private:
   bool directed_;
@@ -320,4 +362,7 @@ void WriteGraph(const CSRGraph<int, int, true> &g, std::string fname) {
     }
     gfile.close();
 }
+
+
+
 #endif  // GRAPH_H_

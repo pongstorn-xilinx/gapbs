@@ -30,15 +30,30 @@ using namespace std;
 typedef float ScoreT;
 const float kDamp = 0.85;
 
+#define GEN_SIDEFILE
+ofstream sideFile;
 
 pvector<ScoreT> PageRankPullGS(const Graph &g, int max_iters,
                              double epsilon = 0) {
   const ScoreT init_score = 1.0f / g.num_nodes();
   const ScoreT base_score = (1.0f - kDamp) / g.num_nodes();
   pvector<ScoreT> scores(g.num_nodes(), init_score);
-  scores.dump(" scores ");
+//  scores.dump(" scores ");
   pvector<ScoreT> outgoing_contrib(g.num_nodes());
+
   outgoing_contrib.dump(" outgoing_contrib ");
+#ifdef GEN_SIDEFILE
+//  g.WriteOutNeigh(sideFile);
+  sideFile << g.getInNeighAddresses();
+  g.WriteInNeigh(sideFile);
+  sideFile << outgoing_contrib.getAddresses();
+#endif
+  ofstream graphInfoFile;
+  graphInfoFile.open("property_addr.txt");
+  graphInfoFile << g.getInNeighAddresses();
+  graphInfoFile << outgoing_contrib.getAddresses();
+  graphInfoFile.close();
+
   #pragma omp parallel for
   for (NodeID n=0; n < g.num_nodes(); n++)
     outgoing_contrib[n] = init_score / g.out_degree(n);
@@ -102,6 +117,18 @@ int main(int argc, char* argv[]) {
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
+
+#ifdef GEN_SIDEFILE
+//   std::string graphName(cli.filename().substr(0, cli.filename().find(".")));
+//  graphName = graphName.substr(graphName.find_last_of("/")+1);
+//  std::string fileName("pr_" + graphName);
+//  fileName.append("_n");
+//  fileName.append(std::to_string(cli.num_trials()));
+//  fileName.append(".txt");
+//  sideFile.open(fileName);
+  sideFile.open("edge_data.txt");
+#endif
+
   auto PRBound = [&cli] (const Graph &g) {
     return PageRankPullGS(g, cli.max_iters(), cli.tolerance());
   };
@@ -109,5 +136,8 @@ int main(int argc, char* argv[]) {
     return PRVerifier(g, scores, cli.tolerance());
   };
   BenchmarkKernel(cli, g, PRBound, PrintTopScores, VerifierBound);
+#ifdef GEN_SIDEFILE
+  sideFile.close();
+#endif
   return 0;
 }

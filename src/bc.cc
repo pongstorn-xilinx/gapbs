@@ -43,10 +43,13 @@ propagation phase.
 */
 
 
+
 using namespace std;
 typedef float ScoreT;
 typedef double CountT;
 
+#define GEN_SIDEFILE
+ofstream sideFile;
 
 void PBFS(const Graph &g, NodeID source, pvector<CountT> &path_counts,
     Bitmap &succ, vector<SlidingQueue<NodeID>::iterator> &depth_index,
@@ -98,7 +101,19 @@ pvector<ScoreT> Brandes(const Graph &g, SourcePicker<Graph> &sp,
   t.Start();
   pvector<ScoreT> scores(g.num_nodes(), 0);
   pvector<CountT> path_counts(g.num_nodes());
+
   path_counts.dump(" Brandes path_counts ");
+#ifdef GEN_SIDEFILE
+  sideFile << g.getOutNeighAddresses();
+  g.WriteOutNeigh(sideFile);
+//  g.WriteInNeigh(sideFile);
+  sideFile << path_counts.getAddresses();
+#endif
+    ofstream graphInfoFile;
+    graphInfoFile.open("property_addr.txt");
+    graphInfoFile  << g.getOutNeighAddresses();
+    graphInfoFile  << path_counts.getAddresses();
+    graphInfoFile.close();
 
   Bitmap succ(g.num_edges_directed());
   vector<SlidingQueue<NodeID>::iterator> depth_index;
@@ -236,7 +251,19 @@ int main(int argc, char* argv[]) {
     cout << "Warning: iterating from same source (-r & -i)" << endl;
   Builder b(cli);
   Graph g = b.MakeGraph();
-  SourcePicker<Graph> sp(g, cli.start_vertex());
+
+#ifdef GEN_SIDEFILE
+//  std::string graphName(cli.filename().substr(0, cli.filename().find(".")));
+//  graphName = graphName.substr(graphName.find_last_of("/")+1);
+//  std::string fileName("bc_" + graphName);
+//  fileName.append("_n");
+//  fileName.append(std::to_string(cli.num_trials()));
+//  fileName.append(".txt");
+//  sideFile.open(fileName);
+    sideFile.open("edge_data.txt");
+#endif
+
+    SourcePicker<Graph> sp(g, cli.start_vertex());
   auto BCBound =
     [&sp, &cli] (const Graph &g) { return Brandes(g, sp, cli.num_iters()); };
   SourcePicker<Graph> vsp(g, cli.start_vertex());
@@ -245,5 +272,8 @@ int main(int argc, char* argv[]) {
     return BCVerifier(g, vsp, cli.num_iters(), scores);
   };
   BenchmarkKernel(cli, g, BCBound, PrintTopScores, VerifierBound);
+#ifdef GEN_SIDEFILE
+  sideFile.close();
+#endif
   return 0;
 }
